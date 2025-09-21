@@ -13,9 +13,9 @@ MONO = {
     '0':'𝟢','1':'𝟣','2':'𝟤','3':'𝟥','4':'𝟦','5':'𝟧','6':'𝟨','7':'𝟩','8':'𝟪','9':'𝟫'
 }
 def mono(t: str) -> str:
-    return ''.join(MONO.get(c,c) for c in t)
+    return ''.join(MONO.get(c, c) for c in t)
 
-# --- format address ---
+# --- format address (labels mono, values clean) ---
 def format_address(data: dict) -> str:
     return f"""
 <b>{mono("⌬ random address ⌬")}</b>
@@ -38,7 +38,7 @@ def build_keyboard() -> InlineKeyboardMarkup:
         InlineKeyboardButton(mono("close"), callback_data="close")
     ]])
 
-# --- command ---
+# --- /address command ---
 @app.on_message(filters.command(["address","addr"]))
 async def address_cmd(_, msg):
     await msg.reply_text(
@@ -52,20 +52,19 @@ async def nav_handler(_, query):
     if query.data == "close":
         return await query.message.delete()
 
-    # dot animation (smooth)
+    # dot animation (loops a few steps)
     for dots in [".", "..", "...", "....", ".....", "......"]:
         await query.edit_message_text(
             f"{mono('gathering info')} {dots}",
-            reply_markup=build_keyboard(),
-            parse_mode="HTML"
+            reply_markup=build_keyboard()
         )
         await asyncio.sleep(0.5)
 
     # fetch and display new address
     try:
         r = requests.get(API_URL, timeout=10).json()
-        data = r.get("address", r.get("addresses",[{}])[0])
+        data = r.get("address", r.get("addresses", [{}])[0])
         text = format_address(data)
-        await query.edit_message_text(text, reply_markup=build_keyboard(), parse_mode="HTML")
+        await query.edit_message_text(text, reply_markup=build_keyboard())
     except Exception as e:
-        await query.edit_message_text(f"<b>{mono('error')}:</b> <code>{e}</code>", parse_mode="HTML")
+        await query.edit_message_text(f"<b>{mono('error')}:</b> <code>{e}</code>", reply_markup=build_keyboard())
